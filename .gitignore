@@ -158,3 +158,10 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+mlruns/0/875d1a55f9744ed08b9f67fbd7abbf09/tags/mlflow.user
+mlruns/0/meta.yaml
+mlruns/0/875d1a55f9744ed08b9f67fbd7abbf09/meta.yaml
+mlruns/0/875d1a55f9744ed08b9f67fbd7abbf09/tags/mlflow.runName
+mlruns/0/875d1a55f9744ed08b9f67fbd7abbf09/tags/mlflow.source.git.commit
+mlruns/0/875d1a55f9744ed08b9f67fbd7abbf09/tags/mlflow.source.name
+mlruns/0/875d1a55f9744ed08b9f67fbd7abbf09/tags/mlflow.source.type

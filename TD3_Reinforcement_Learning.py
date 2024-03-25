@@ -3,9 +3,9 @@ import torch
 import copy
 import torch.nn as nn
 import torch.nn.functional as F
-import cogflow as cf
+import cogflow
 import gym
-
+cf=cogflow.CogFramework()
 
 class ReplayBuffer(object):
     def __init__(self, state_dim, action_dim, max_size=int(1e6)):
