@@ -319,6 +319,7 @@ def trainModel(policy="TD3",
     episode_timesteps = 0
     episode_num = 0
     print("cogflow is starting")
+
     with cf.start_run(run_name="custom_model_run") as run:
         cf.log_param("EnviromentType", envType)
         cf.log_param("Seed", seed)
@@ -389,3 +390,4 @@ def trainModel(policy="TD3",
 
 
 trainModel()
+
