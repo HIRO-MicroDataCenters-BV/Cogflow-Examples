@@ -204,12 +204,12 @@ class TD3(cf.pyfunc.PythonModel):
         ciritcOptimizerFileName=filename + "_critic_optimizer"
         actorFileName=filename + "_actor"
         actorOptimizerFileName=filename + "_actor_optimizer"
-        mlflow.pytorch.save_state_dict(self.critic.state_dict(), cirticFileName)
+        cf.pytorch.save_state_dict(self.critic.state_dict(), cirticFileName)
         #torch.save(self.critic.state_dict(), filename + "_critic")
-        mlflow.pytorch.save_state_dict(self.critic_optimizer.state_dict(), ciritcOptimizerFileName)
+        cf.pytorch.save_state_dict(self.critic_optimizer.state_dict(), ciritcOptimizerFileName)
 
-        mlflow.pytorch.save_state_dict(self.actor.state_dict(), actorFileName)
-        mlflow.pytorch.save_state_dict(self.actor_optimizer.state_dict(), actorOptimizerFileName)
+        cf.pytorch.save_state_dict(self.actor.state_dict(), actorFileName)
+        cf.pytorch.save_state_dict(self.actor_optimizer.state_dict(), actorOptimizerFileName)
         return {
             "cirticFileName":cirticFileName,
             "ciritcOptimizerFileName":ciritcOptimizerFileName,
@@ -342,7 +342,7 @@ def trainModel(policy="TD3",
     episode_reward = 0
     episode_timesteps = 0
     episode_num = 0
-    print("mlflow is starting")
+    print("cogFlow is starting")
     with cf.start_run(run_name="custom_model_run") as run:
         cf.log_param("EnviromentType",envType)
         cf.log_param("Seed",seed)
@@ -402,7 +402,7 @@ def trainModel(policy="TD3",
                 articats=policy.save(f"./models/{file_name}")
                 
                 
-                model_info = mlflow.pyfunc.log_model(
+                model_info = cf.pyfunc.log_model(
                         artifact_path=file_name,
                         python_model=policy,
                         artifacts=articats,
