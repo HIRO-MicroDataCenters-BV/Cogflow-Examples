@@ -4,4 +4,4 @@ Each custom model needs to implement 4 function and inherit from Cogflow.pyfunc.
 1) train
 2) predict
 3) save
-4) load_cotext
+4) load_context
