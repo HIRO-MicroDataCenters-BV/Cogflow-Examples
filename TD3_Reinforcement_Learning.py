@@ -3,9 +3,31 @@ import torch
 import copy
 import torch.nn as nn
 import torch.nn.functional as F
-import cogflow
 import gym
-cf=cogflow.CogFramework()
+import cogflow
+
+#PluginMnaager manages plugins such as MlflowPlugin, KubeflowPlugin, and DatasetPlugin.
+cml = cogflow.PluginManager()
+
+#To print all available attributes and methods of a PluginManager module
+#print(dir(cml))
+
+#To get the documentation string (docstring) for the PluginManager module
+#help(cml)
+
+#Default all plugins will be in deactivated status
+cml.plugin_status()
+
+#Activate only required plugin to make use of it, this activation is effective for user session only
+mlp_activate = cml.activate_plugin("MlflowPlugin")
+kfp_activate = cml.activate_plugin("KubeflowPlugin")
+dsp_activate = cml.activate_plugin("DatasetPlugin")
+
+#To get plugin instances
+mlp = cml.get_mlflow_plugin()
+kfp = cml.get_kflow_plugin()
+dsp = cml.get_dataset_plugin()
+
 
 class ReplayBuffer(object):
     def __init__(self, state_dim, action_dim, max_size=int(1e6)):
@@ -95,7 +117,7 @@ class Critic(nn.Module):
         return q1
 
 
-class TD3(cf.pyfunc.PythonModel):
+class TD3(mlp.pyfunc.PythonModel):
     def __init__(
             self,
             state_dim,
@@ -132,7 +154,7 @@ class TD3(cf.pyfunc.PythonModel):
     def train(self, replay_buffer, batch_size=256):
         self.total_it += 1
 
-        # Sample replay buffer 
+        # Sample replay buffer
         state, action, next_state, reward, not_done = replay_buffer.sample(batch_size)
 
         with torch.no_grad():
@@ -167,7 +189,7 @@ class TD3(cf.pyfunc.PythonModel):
             # Compute actor losse
             actor_loss = -self.critic.Q1(state, self.actor(state)).mean()
 
-            # Optimize the actor 
+            # Optimize the actor
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
             self.actor_optimizer.step()
@@ -191,11 +213,11 @@ class TD3(cf.pyfunc.PythonModel):
         cirtic_optimizer_filename = filename + "_critic_optimizer"
         actor_filename = filename + "_actor"
         actor_optimizer_filename = filename + "_actor_optimizer"
-        cf.pytorch.save_state_dict(self.critic.state_dict(), cirtic_filename)
-        cf.pytorch.save_state_dict(self.critic_optimizer.state_dict(), cirtic_optimizer_filename)
+        mlp.pytorch.save_state_dict(self.critic.state_dict(), cirtic_filename)
+        mlp.pytorch.save_state_dict(self.critic_optimizer.state_dict(), cirtic_optimizer_filename)
 
-        cf.pytorch.save_state_dict(self.actor.state_dict(), actor_filename)
-        cf.pytorch.save_state_dict(self.actor_optimizer.state_dict(), actor_optimizer_filename)
+        mlp.pytorch.save_state_dict(self.actor.state_dict(), actor_filename)
+        mlp.pytorch.save_state_dict(self.actor_optimizer.state_dict(), actor_optimizer_filename)
         return {
             "cirticFileName": cirtic_filename,
             "ciritcOptimizerFileName": cirtic_optimizer_filename,
@@ -268,12 +290,12 @@ def trainModel(policy="TD3",
     print(f"Policy: {policy}, Env: {envType}, Seed: {seed}")
     print("---------------------------------------")
 
-    experiment_id = cf.set_experiment(
+    experiment_id = mlp.set_experiment(
         experiment_name="Custom Models TD3",
 
     )
-    cf.pytorch.autolog()
-    cf.autolog()
+    mlp.pytorch.autolog()
+    mlp.autolog()
 
     env = gym.make(envType)
 
@@ -320,19 +342,19 @@ def trainModel(policy="TD3",
     episode_num = 0
     print("cogflow is starting")
 
-    with cf.start_run(run_name="custom_model_run") as run:
-        cf.log_param("EnviromentType", envType)
-        cf.log_param("Seed", seed)
-        cf.log_param("Start timesteps", start_timesteps)
-        cf.log_param("Evaluation frequency", eval_freq)
-        cf.log_param("Max timesteps", max_timesteps)
-        cf.log_param("Expl noise", expl_noise)
-        cf.log_param("Batch size", batch_size)
-        cf.log_param("Discount", discount)
-        cf.log_param("Tau", tau)
-        cf.log_param("Policy noise", policy_noise)
-        cf.log_param("Noise clip", noise_clip)
-        cf.log_param("Policy Frequency", policy_freq)
+    with mlp.start_run(run_name="custom_model_run") as run:
+        mlp.log_param("EnviromentType", envType)
+        mlp.log_param("Seed", seed)
+        mlp.log_param("Start timesteps", start_timesteps)
+        mlp.log_param("Evaluation frequency", eval_freq)
+        mlp.log_param("Max timesteps", max_timesteps)
+        mlp.log_param("Expl noise", expl_noise)
+        mlp.log_param("Batch size", batch_size)
+        mlp.log_param("Discount", discount)
+        mlp.log_param("Tau", tau)
+        mlp.log_param("Policy noise", policy_noise)
+        mlp.log_param("Noise clip", noise_clip)
+        mlp.log_param("Policy Frequency", policy_freq)
         for t in range(int(max_timesteps)):
             episode_timesteps += 1
             # Select action randomly or according to policy
@@ -364,7 +386,7 @@ def trainModel(policy="TD3",
                 # +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
                 print(
                     f"Total T: {t + 1} Episode Num: {episode_num + 1} Episode T: {episode_timesteps} Reward: {episode_reward:.3f}")
-                cf.log_metric("Reward", episode_reward, step=episode_num)
+                mlp.log_metric("Reward", episode_reward, step=episode_num)
                 # Reset environment
                 (state, _), done = env.reset(), False
                 episode_reward = 0
@@ -375,19 +397,18 @@ def trainModel(policy="TD3",
             if (t + 1) % eval_freq == 0:
                 episod_eval_reward = eval_policy(policy, envType, seed)
                 evaluations.append(episod_eval_reward)
-                cf.log_metric("Episode Evaluation Reward", episod_eval_reward, step=int((t + 1) // eval_freq))
+                mlp.log_metric("Episode Evaluation Reward", episod_eval_reward, step=int((t + 1) // eval_freq))
                 np.save(f"./results/{file_name}", evaluations)
                 articats = policy.save(f"./models/{file_name}")
 
-                model_info = cf.pyfunc.log_model(
+                model_info = mlp.pyfunc.log_model(
                     artifact_path=file_name,
                     python_model=policy,
                     artifacts=articats,
                     pip_requirements=[],
                     input_example=state,
-                    signature=cf.models.infer_signature(next_state, action)
+                    signature=mlp.models.infer_signature(next_state, action)
                 )
 
 
 trainModel()
-
